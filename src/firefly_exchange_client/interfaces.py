@@ -29,7 +29,7 @@ class OrderSignatureRequest(RequiredOrderFields):
   salt: int # (optional)  random number for uniqueness of order. Generated randomly if not provided
   expiration: int # (optional) time at which order will expire. Will be set to 1 month if not provided
   maker: str # (optional) maker of the order, if not provided the account used to initialize the client will be default maker
-  
+
 class OrderSignatureResponse(RequiredOrderFields):
   maker: str 
   orderSignature: str
@@ -99,6 +99,7 @@ class GetMarketRecentTradesRequest(TypedDict):
 class OrderCancelSignatureRequest(TypedDict):
   symbol: MARKET_SYMBOLS
   hashes: list
+  parentAddress: str # (optional) should only be provided by a sub account
 
 class OrderCancellationRequest(OrderCancelSignatureRequest):
   signature: str
@@ -118,10 +119,8 @@ class GetTransactionHistoryRequest(TypedDict):
   pageSize: int  # will get only provided number of orders must be <= 50
   pageNumber: int  # will fetch particular page records. A single page contains 50 records.
 
-class GetPositionRequest(TypedDict):
-  symbol: MARKET_SYMBOLS  # will fetch orders of provided market
-  pageSize: int  # will get only provided number of orders must be <= 50
-  pageNumber: int  # will fetch particular page records. A single page contains 50 records.
+class GetPositionRequest(GetTransactionHistoryRequest):
+  parentAddress : str # (optional) should be provided by sub accounts
 
 class GetUserTradesRequest(TypedDict):
   symbol: MARKET_SYMBOLS
@@ -132,14 +131,21 @@ class GetUserTradesRequest(TypedDict):
   pageSize: int
   pageNumber: int
   type: ORDER_TYPE
+  parentAddress: str # (optional) should be provided by sub account
 
 class GetOrderRequest(GetTransactionHistoryRequest):
-  statuses:ORDER_STATUS # status of orders to be fetched
+  statuses:List[ORDER_STATUS] # (optional) status of orders to be fetched
+  orderId: int #(optional) the id of order to be fetched
+  orderType: List[ORDER_TYPE]  # (optional) type of order Limit/Market
+  orderHashes: List[str] # (optional) hashes of order to be fetched
+  parentAddress : str # (optional) should be provided by sub accounts
 
 class GetFundingHistoryRequest(TypedDict):
   symbol: MARKET_SYMBOLS  # will fetch orders of provided market
   pageSize: int  # will get only provided number of orders must be <= 50
   cursor: int  # will fetch particular page records. A single page contains 50 records.
+  parentAddress: str # (optional) should be provided by a sub account 
+
 
 class FundingHistoryResponse(TypedDict):
   id: int # unique id
@@ -160,3 +166,26 @@ class GetFundingHistoryResponse(TypedDict):
   isMoreDataAvailable: bool # boolean indicating if there is more data available
   nextCursor: int # next page number
   data: List[FundingHistoryResponse]
+
+class CountDown(TypedDict):
+  symbol: str
+  count: int
+class GetCancelOnDisconnectTimerRequest(TypedDict):
+  symbol: MARKET_SYMBOLS  # will fetch Cancel On Disconnect Timer of provided market
+  parentAddress: str # (optional) should be provided by a sub account 
+
+class PostTimerAttributes(TypedDict):
+  countDowns: List[CountDown]
+  parentAddress: str 
+
+class FailedCountDownResetResponse(TypedDict):
+  symbol: str
+  reason: str
+
+class PostTimerResponse(TypedDict):
+  acceptedToReset: List[str]
+  failedReset: List[FailedCountDownResetResponse]
+
+
+
+
